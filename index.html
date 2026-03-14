@@ -432,10 +432,51 @@ footer {
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-title">Best Winning Streak</div>
-    <div class="panel-sub">Longest consecutive wins in career</div>
-    <div id="streakPanel"></div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Best Winning Streak</div>
+      <div class="panel-sub">Longest consecutive wins in career</div>
+      <div id="streakPanel"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Recent Form</div>
+      <div class="panel-sub">Last 10 matches — most recent on the right</div>
+      <div id="formPanel"></div>
+    </div>
+  </div>
+
+  <div class="slabel mb24" style="margin-top:24px">Game-Level Stats</div>
+  <div class="three-col" id="gameKpiGrid" style="margin-bottom:16px"></div>
+
+  <div class="panel mb16" style="margin-top:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+      <div>
+        <div class="panel-title">Score Distribution</div>
+        <div class="panel-sub" style="margin-bottom:0">Matches by final scoreline — wins in green, losses in orange</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="tab-btn active" id="sdAll" onclick="filterScoreDist('all',this)">All</button>
+        <button class="tab-btn" id="sdTournament" onclick="filterScoreDist('tournament',this)">Tournaments</button>
+        <button class="tab-btn" id="sdLeague" onclick="filterScoreDist('league',this)">League</button>
+      </div>
+    </div>
+    <div style="position:relative;height:220px;margin-top:16px"><canvas id="scoreDist"></canvas></div>
+  </div>
+
+  <div class="two-col" style="margin-top:0">
+    <div class="panel">
+      <div class="panel-title">Match Intensity</div>
+      <div class="panel-sub">How many games your matches go — 3, 4 or 5</div>
+      <div style="display:flex;align-items:center;gap:24px">
+        <div style="position:relative;height:160px;width:160px;flex-shrink:0"><canvas id="intensityDonut"></canvas></div>
+        <div id="intensityLegend" style="font-size:var(--text-sm);line-height:2.2"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Mental Resilience</div>
+      <div class="panel-sub">Scoring psychology — how you perform under pressure</div>
+      <div id="comebackPanel"></div>
+    </div>
   </div>
 </div>
 
@@ -496,7 +537,7 @@ footer {
     <div class="panel-sub">Percentage of matches won per season</div>
     <div style="position:relative;height:180px"><canvas id="wrChart"></canvas></div>
   </div>
-  <div class="two-col">
+  <div class="two-col mb16">
     <div class="panel">
       <div class="panel-title">Tournaments per Year</div>
       <div class="panel-sub">Distinct tournaments entered per season</div>
@@ -506,6 +547,25 @@ footer {
       <div class="panel-title">Season Breakdown</div>
       <div class="panel-sub">Full stats by year</div>
       <table class="mtbl" id="yearTbl"></table>
+    </div>
+  </div>
+
+  <div class="slabel mb24">Performance Patterns</div>
+  <div class="panel mb16">
+    <div class="panel-title">Win Rate by Month</div>
+    <div class="panel-sub">How you perform across different months of the year — reveals your peak seasons</div>
+    <div style="position:relative;height:200px"><canvas id="monthChart"></canvas></div>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Tournament vs League</div>
+      <div class="panel-sub">Win rate comparison between competition formats</div>
+      <div id="formatCompare"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">5-Game Match Record</div>
+      <div class="panel-sub">Your record in the tightest matches that go the full distance</div>
+      <div id="fiveGamePanel"></div>
     </div>
   </div>
 </div>
@@ -708,8 +768,10 @@ function makeDonut(id, legendId, w, l) {
 
 const tW = MD.filter(m=>m.type==='tournament'&&m.wl==='Win').length;
 const tL = MD.filter(m=>m.type==='tournament'&&m.wl==='Loss').length;
+const tM = tW + tL;
 const lW = MD.filter(m=>m.type==='league'&&m.wl==='Win').length;
 const lL = MD.filter(m=>m.type==='league'&&m.wl==='Loss').length;
+const lM = lW + lL;
 
 makeDonut('donutAll', 'legendAll', wins, losses);
 makeDonut('donutTournament', 'legendTournament', tW, tL);
@@ -721,16 +783,455 @@ let best=0,cur=0,bestStart='',tmpStart='';
 });
 const sd=new Date(bestStart+'T12:00:00');
 document.getElementById('streakPanel').innerHTML=`
-  <div style="text-align:center;padding:14px 0 6px">
-    <div style="font-size:68px;font-weight:900;letter-spacing:-2px;color:var(--green);line-height:1">${best}</div>
-    <div style="font-family:'Red Hat Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:1px;text-transform:uppercase">consecutive wins</div>
-    <div style="font-family:'Red Hat Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px">starting ${sd.toLocaleDateString('en-CA',{month:'long',year:'numeric'})}</div>
-    <div style="display:flex;justify-content:center;gap:3px;margin-top:16px;flex-wrap:wrap">
-      ${Array.from({length:best},(_,i)=>`<div style="width:7px;height:7px;border-radius:50%;background:var(--green);opacity:${(0.2+0.8*(i/best)).toFixed(2)}"></div>`).join('')}
+  <div style="display:flex;align-items:center;gap:20px;padding:10px 0 6px">
+    <div style="font-size:72px;font-weight:900;letter-spacing:-3px;color:var(--green);line-height:1;flex-shrink:0">${best}</div>
+    <div>
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">consecutive wins</div>
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);margin-bottom:12px">starting ${sd.toLocaleDateString('en-CA',{month:'long',year:'numeric'})}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${Array.from({length:best},(_,i)=>`<div style="width:8px;height:8px;border-radius:50%;background:var(--green);opacity:${(0.2+0.8*(i/best)).toFixed(2)}"></div>`).join('')}
+      </div>
     </div>
   </div>`;
 
+// ── RECENT FORM ───────────────────────────────────────────────
+const last10 = sorted.slice(0,10).reverse();
+const formWins  = last10.filter(m=>m.wl==='Win').length;
+const formLosses = last10.filter(m=>m.wl==='Loss').length;
+document.getElementById('formPanel').innerHTML=`
+  <div style="padding:10px 0 6px">
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      ${last10.map(m=>`
+        <div title="${m.opp} · ${fmtD(m.date)}" style="
+          flex:1; height:44px; border-radius:7px; cursor:default;
+          background:${m.wl==='Win'?'rgba(26,158,110,0.15)':'rgba(217,95,43,0.12)'};
+          border:1px solid ${m.wl==='Win'?'rgba(26,158,110,0.35)':'rgba(217,95,43,0.3)'};
+          display:flex;align-items:center;justify-content:center;
+          font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);font-weight:700;
+          color:${m.wl==='Win'?'var(--green)':'var(--red)'}">
+          ${m.wl==='Win'?'W':'L'}
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:16px">
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--green)">${formWins} wins</div>
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--red)">${formLosses} losses</div>
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);margin-left:auto">last 10 matches</div>
+    </div>
+  </div>`;
+
+// ── SCORE DATA ───────────────────────────────────────────────
+const SCORES = {
+  "2026-02-07":"11-3, 9-11, 11-7, 8-11, 11-9",
+  "2026-02-06":"11-7, 11-9, 4-11, 11-9",
+  "2026-02-04":"11-3, 9-11, 9-11, 6-11",
+  "2026-01-28":"12-10, 11-1, 11-4",
+  "2026-01-07":"11-6, 11-9, 11-0",
+  "2025-12-17":"7-11, 11-7, 11-9, 12-14, 9-11",
+  "2025-12-11":"11-8, 11-4, 15-13",
+  "2025-11-30a":"11-7, 11-2, 11-13, 11-9",
+  "2025-11-30b":"11-9, 11-13, 11-7, 11-6",
+  "2025-11-23a":"11-6, 11-4, 5-11, 5-11, 11-2",
+  "2025-11-23b":"11-8, 12-10, 11-8",
+  "2025-11-22a":"15-13, 12-10, 11-8",
+  "2025-11-22b":"12-10, 11-9, 11-8",
+  "2025-11-16":"9-11, 10-12, 11-5, 11-4, 11-4",
+  "2025-11-15a":"9-11, 11-8, 11-4, 2-11, 11-8",
+  "2025-11-15b":"11-9, 11-8, 13-11",
+  "2024-02-24":"11-0, 11-1, 11-6",
+  "2024-02-23":"11-6, 11-5, 14-12",
+  "2024-02-21":"11-3, 11-6, 11-9",
+  "2024-01-21":"11-9, 11-9, 7-11, 11-13, 11-4",
+  "2023-05-12a":"14-16, 11-6, 11-9, 4-11, 12-10",
+  "2023-05-12b":"11-7, 11-5, 11-8",
+  "2023-05-11":"11-8, 11-9, 6-11, 11-7",
+  "2023-04-15":"11-7, 11-13, 11-9, 11-2",
+  "2023-04-05":"9-11, 11-5, 8-11, 11-5, 14-12",
+  "2023-04-01a":"11-7, 11-7, 11-7",
+  "2023-04-01b":"12-10, 10-12, 8-11, 11-8, 11-9",
+  "2023-03-31a":"11-13, 19-17, 11-6, 11-7",
+  "2023-03-31b":"11-4, 11-4, 11-7",
+  "2023-03-22":"10-12, 11-3, 12-10, 11-9",
+  "2023-03-19":"9-11, 12-10, 11-4, 11-6",
+  "2023-01-28a":"4-11, 9-11, 11-8, 11-7, 11-5",
+  "2023-01-28b":"7-11, 7-11, 11-7, 11-7, 11-7",
+  "2023-01-18":"11-3, 11-7, 8-11, 11-8",
+  "2023-01-11":"11-7, 11-7, 11-7",
+  "2022-12-13":"11-8, 11-8, 9-11, 11-3",
+  "2022-12-11":"7-11, 11-7, 11-7, 11-7",
+  "2022-12-06":"8-11, 2-11, 4-11",
+  "2022-11-27":"11-8, 11-8, 9-11, 11-6",
+  "2022-11-26a":"13-11, 9-11, 11-5, 9-11, 11-7",
+  "2022-11-26b":"9-11, 11-3, 11-2, 11-9",
+  "2022-11-23":"11-7, 11-6, 9-11, 11-5",
+  "2022-11-22":"11-7, 11-7, 4-11, 9-11, 11-9",
+  "2022-11-16":"11-8, 4-11, 11-9, 11-5",
+  "2022-11-15":"11-1, 11-9, 11-6",
+  "2022-11-04":"11-9, 11-9, 11-4",
+  "2022-06-19":"11-9, 11-13, 5-11, 11-4, 11-2",
+  "2022-06-18a":"11-7, 11-6, 12-14, 11-8",
+  "2022-06-18b":"9-11, 6-11, 11-5, 9-11",
+  "2022-06-03":"3-11, 4-11, 3-11",
+  "2022-06-01":"11-7, 11-7, 11-7",
+  "2022-05-11":"11-7, 11-7, 11-7",
+  "2022-04-27":"11-5, 9-11, 1-11, 11-7, 11-3",
+  "2022-04-08":"10-12, 11-5, 11-5, 5-11, 11-6",
+  "2021-12-10":"11-7, 7-11, 11-7, 11-6",
+  "2021-11-28":"15-13, 11-5, 11-8, 11-4",
+  "2021-11-27":"11-7, 11-3, 11-3",
+  "2021-11-26":"14-12, 11-7, 11-6",
+  "2019-01-17a":"11-7, 11-8, 11-3",
+  "2019-01-17b":"13-11, 8-11, 11-6, 11-13, 11-13",
+  "2018-03-25":"9-11, 5-11, 11-8, 6-11",
+  "2018-03-24":"11-4, 11-9, 12-14, 11-5",
+  "2018-03-23a":"9-11, 11-7, 11-5, 11-8",
+  "2018-03-23b":"13-11, 11-4, 11-4",
+  "2017-10-29a":"7-11, 7-11, 11-6, 11-9, 11-5",
+  "2017-10-29b":"11-6, 7-11, 11-8, 14-12",
+  "2017-10-28a":"6-11, 12-10, 11-4, 11-5",
+  "2017-10-28b":"11-6, 11-7, 9-11, 11-9",
+  "2017-10-27":"11-6, 11-9, 11-7",
+  "2017-09-29":"11-13, 8-11, 4-11",
+  "2017-04-09a":"11-6, 11-5, 11-3",
+  "2017-04-09b":"10-12, 7-11, 7-11",
+  "2017-04-08":"11-9, 3-11, 12-10, 11-5",
+  "2017-04-07":"11-9, 9-11, 9-11, 7-11",
+  "2017-03-26a":"11-3, 9-11, 11-2, 9-11, 11-9",
+  "2017-03-26b":"14-16, 7-11, 10-12",
+  "2017-03-25a":"11-8, 11-6, 11-7",
+  "2017-03-25b":"11-9, 6-11, 9-11, 8-11",
+  "2017-03-25c":"11-6, 11-4, 11-6",
+  "2016-10-30":"10-12, 6-11, 12-10, 6-11",
+  "2016-10-29":"11-6, 11-4, 11-4",
+  "2016-10-28":"8-11, 7-11, 4-11",
+  "2016-03-17a":"11-8, 11-3, 11-6",
+  "2016-03-17b":"11-8, 11-5, 11-8",
+  "2016-03-17c":"11-5, 11-5, 12-10",
+  "2016-03-17d":"11-5, 11-8, 11-9",
+  "2016-02-18a":"11-2, 11-8, 11-2",
+  "2016-02-18b":"6-11, 7-11, 9-11",
+  "2016-01-24":"7-11, 11-8, 6-11, 10-12",
+  "2016-01-22":"5-11, 12-10, 10-12, 11-7, 11-5",
+  "2016-01-21a":"11-6, 11-8, 11-7",
+  "2016-01-21b":"11-9, 11-6, 4-11, 13-11",
+};
+
+function parseGames(scoreStr) {
+  if(!scoreStr) return [];
+  const result = [];
+  scoreStr.split(',').forEach(part => {
+    const hit = part.trim().match(/(\d+)-(\d+)/);
+    if(hit) result.push([parseInt(hit[1]), parseInt(hit[2])]);
+  });
+  return result;
+}
+
+// Build parsed game arrays per match index
+const parsedGames = MD.map(m => {
+  const keys = Object.keys(SCORES).filter(k => k.startsWith(m.date));
+  const ng = parseInt(m.result[0]) + parseInt(m.result[2]);
+  let scoreStr = '';
+  if(keys.length === 1) {
+    scoreStr = SCORES[keys[0]];
+  } else if(keys.length > 1) {
+    for(const k of keys) {
+      if(parseGames(SCORES[k]).length === ng) { scoreStr = SCORES[k]; break; }
+    }
+    if(!scoreStr) scoreStr = SCORES[keys[0]] || '';
+  }
+  return parseGames(scoreStr);
+});
+
+// ── GAME-LEVEL CALCULATIONS ───────────────────────────────────
+let totalGW=0, totalGL=0;
+let lostG1Won=0, lostG1Total=0;
+const matchLengths = {3:0,4:0,5:0};
+const fiveGameW = [], fiveGameL = [];
+
+MD.forEach((m, i) => {
+  const mgw = parseInt(m.result[0]);
+  const mgl = parseInt(m.result[2]);
+  totalGW += mgw; totalGL += mgl;
+  const ng = mgw + mgl;
+  if(matchLengths[ng] !== undefined) matchLengths[ng]++;
+  if(ng === 5){ m.wl==='Win' ? fiveGameW.push(m) : fiveGameL.push(m); }
+  const games = parsedGames[i];
+  if(games.length >= 2 && games[0][0] < games[0][1]) {
+    lostG1Total++;
+    if(m.wl==='Win') lostG1Won++;
+  }
+});
+
+const gameWR = Math.round(totalGW/(totalGW+totalGL)*100);
+const comebackRate = lostG1Total ? Math.round(lostG1Won/lostG1Total*100) : 0;
+const fiveWR = (fiveGameW.length+fiveGameL.length) ? Math.round(fiveGameW.length/(fiveGameW.length+fiveGameL.length)*100) : 0;
+const straightWins = MD.filter(m=>m.result==='3-0').length;
+
+// ── GAME KPI GRID ─────────────────────────────────────────────
+const gameKpis = [
+  {label:'Games Won',val:totalGW,sub:`${gameWR}% game win rate`,c:'#1a9e6e'},
+  {label:'Games Lost',val:totalGL,sub:`${100-gameWR}% game loss rate`,c:'#d95f2b'},
+  {label:'3-0 Straight Wins',val:straightWins,sub:`${Math.round(straightWins/wins*100)}% of all wins`,c:'#b8860b'},
+];
+document.getElementById('gameKpiGrid').innerHTML = gameKpis.map(k=>`
+  <div class="kpi" style="--kpi-color:${k.c}">
+    <div class="kpi-label">${k.label}</div>
+    <div class="kpi-val">${k.val}</div>
+    <div class="kpi-sub">${k.sub}</div>
+  </div>`).join('');
+
+// ── SCORE DISTRIBUTION ───────────────────────────────────────
+const winScores  = ['3-0','3-1','3-2'];
+const lossScores = ['0-3','1-3','2-3'];
+const allScores  = [...winScores, ...lossScores];
+const scoreColors = allScores.map(s => winScores.includes(s) ? 'rgba(26,158,110,0.85)' : 'rgba(217,95,43,0.8)');
+
+function getScoreCounts(filter) {
+  const counts = {};
+  MD.filter(m => filter === 'all' || m.type === filter).forEach(m => {
+    counts[m.result] = (counts[m.result] || 0) + 1;
+  });
+  return allScores.map(s => counts[s] || 0);
+}
+
+const scoreChart = new Chart(document.getElementById('scoreDist'), {
+  type: 'bar',
+  data: {
+    labels: allScores,
+    datasets: [{
+      data: getScoreCounts('all'),
+      backgroundColor: scoreColors,
+      borderRadius: 6,
+      barPercentage: 0.6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => `${ctx.raw} matches` } },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 13, family: "'Red Hat Mono',monospace", weight: '600' }, color: '#888882' }
+      },
+      y: {
+        grid: { color: 'rgba(128,128,128,0.1)' },
+        ticks: { font: { size: 11, family: "'Red Hat Mono',monospace" }, color: '#888882', stepSize: 5 },
+        beginAtZero: true
+      }
+    },
+    animation: {
+      onComplete: function() {
+        const chart = this;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.font = "700 14px 'Red Hat Display', sans-serif";
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        chart.data.datasets[0].data.forEach((val, i) => {
+          if(val === 0) return;
+          const meta = chart.getDatasetMeta(0);
+          const bar = meta.data[i];
+          ctx.fillText(val, bar.x, bar.y + bar.height - 6);
+        });
+        ctx.restore();
+      }
+    }
+  }
+});
+
+function filterScoreDist(filter, btn) {
+  document.querySelectorAll('#sdAll, #sdTournament, #sdLeague').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  scoreChart.data.datasets[0].data = getScoreCounts(filter);
+  scoreChart.update();
+}
+
+// ── INTENSITY DONUT ───────────────────────────────────────────
+new Chart(document.getElementById('intensityDonut'), {
+  type:'doughnut',
+  data:{labels:['3 games','4 games','5 games'],datasets:[{
+    data:[matchLengths[3],matchLengths[4],matchLengths[5]],
+    backgroundColor:['#1a9e6e','#1d6fd4','#7c52cc'],borderWidth:0,hoverOffset:4
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}
+});
+const totalM = matchLengths[3]+matchLengths[4]+matchLengths[5];
+document.getElementById('intensityLegend').innerHTML = [
+  {label:'3-game (straight)',n:matchLengths[3],c:'#1a9e6e'},
+  {label:'4-game',n:matchLengths[4],c:'#1d6fd4'},
+  {label:'5-game (full distance)',n:matchLengths[5],c:'#7c52cc'},
+].map(r=>`<div style="display:flex;align-items:center;gap:8px">
+  <span style="width:10px;height:3px;border-radius:2px;background:${r.c};display:inline-block;flex-shrink:0"></span>
+  <span style="color:var(--ink2)">${r.label}</span>
+  <span style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);margin-left:auto">${r.n} &nbsp;<span style="opacity:0.6">(${Math.round(r.n/totalM*100)}%)</span></span>
+</div>`).join('');
+
+// ── MENTAL RESILIENCE — FULL SCORING ANALYSIS ────────────────
+// Recompute using parsed game scores for full accuracy
+let res_down01_w=0, res_down01_t=0;
+let res_down02_w=0, res_down02_t=0;
+let res_lead10_lost=0, res_lead20_lost=0;
+let res_close_w=0, res_close_l=0;
+let res_fg_won_mw=0, res_fg_won_mt=0;
+let res_pts_for=0, res_pts_against=0, res_pts_games=0;
+let res_win_game_for=0, res_win_game_against=0, res_win_game_n=0;
+let res_loss_game_for=0, res_loss_game_against=0, res_loss_game_n=0;
+
+parsedGames.forEach((games, i) => {
+  if(!games || games.length === 0) return;
+  const m = MD[i];
+  const matchWon = m.wl === 'Win';
+  const gw = parseInt(m.result[0]);
+  const gl = parseInt(m.result[2]);
+
+  // Points totals
+  games.forEach(g => {
+    res_pts_for += g[0]; res_pts_against += g[1]; res_pts_games++;
+    if(g[0] > g[1]) {
+      res_win_game_for += g[0]; res_win_game_against += g[1]; res_win_game_n++;
+    } else {
+      res_loss_game_for += g[0]; res_loss_game_against += g[1]; res_loss_game_n++;
+    }
+  });
+
+  // Game 1 win rate → match win rate
+  const wonGame1 = games[0][0] > games[0][1];
+  res_fg_won_mt++;
+  if((wonGame1 && matchWon) || (!wonGame1 && !matchWon)) {
+    // only count fg_won cases
+  }
+  if(wonGame1) { if(matchWon) res_fg_won_mw++; }
+
+  // Down 0-1
+  if(games.length >= 2 && games[0][0] < games[0][1]) {
+    res_down01_t++;
+    if(matchWon) res_down01_w++;
+  }
+
+  // Down 0-2
+  if(games.length >= 3) {
+    const after2w = games.slice(0,2).filter(g=>g[0]>g[1]).length;
+    if(after2w === 0) {
+      res_down02_t++;
+      if(matchWon) res_down02_w++;
+    }
+  }
+
+  // Had lead 1-0, lost match
+  if(games.length >= 2 && games[0][0] > games[0][1] && !matchWon) res_lead10_lost++;
+
+  // Had lead 2-0, lost match
+  if(games.length >= 3) {
+    const after2w = games.slice(0,2).filter(g=>g[0]>g[1]).length;
+    if(after2w === 2 && !matchWon) res_lead20_lost++;
+  }
+
+  // Clutch — final game decided by ≤2 pts
+  const last = games[games.length-1];
+  if(Math.abs(last[0]-last[1]) <= 2) {
+    matchWon ? res_close_w++ : res_close_l++;
+  }
+});
+
+const r_down01    = res_down01_t  ? Math.round(res_down01_w/res_down01_t*100)  : 0;
+const r_down02    = res_down02_t  ? Math.round(res_down02_w/res_down02_t*100)  : 0;
+const r_clutch    = (res_close_w+res_close_l) ? Math.round(res_close_w/(res_close_w+res_close_l)*100) : 0;
+const r_fg        = res_fg_won_mt ? Math.round(res_fg_won_mw/(MD.filter(m=>parsedGames[MD.indexOf(m)]?.length>0&&parsedGames[MD.indexOf(m)][0][0]>parsedGames[MD.indexOf(m)][0][1]).length||1)*100) : 0;
+const r_pts_pct   = res_pts_games ? Math.round(res_pts_for/(res_pts_for+res_pts_against)*100) : 0;
+const r_avg_for   = res_win_game_n ? (res_win_game_for/res_win_game_n).toFixed(1) : '—';
+const r_avg_wg_ag = res_win_game_n ? (res_win_game_against/res_win_game_n).toFixed(1) : '—';
+const r_avg_lfor  = res_loss_game_n ? (res_loss_game_for/res_loss_game_n).toFixed(1) : '—';
+const r_avg_lag   = res_loss_game_n ? (res_loss_game_against/res_loss_game_n).toFixed(1) : '—';
+
+function resRow(label, val, sub, color, bar) {
+  return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+      <span style="font-size:var(--text-sm);color:var(--ink2)">${label}</span>
+      <span style="font-family:'Red Hat Mono',monospace;font-size:var(--text-md);font-weight:700;color:${color}">${val}</span>
+    </div>
+    ${bar ? `<div style="background:var(--surface3);border-radius:3px;height:4px;overflow:hidden;margin-bottom:4px"><div style="width:${bar}%;height:100%;background:${color};border-radius:3px"></div></div>` : ''}
+    <div style="font-family:'Red Hat Mono',monospace;font-size:10px;color:var(--muted)">${sub}</div>
+  </div>`;
+}
+
+document.getElementById('comebackPanel').innerHTML = `
+  <div style="margin-top:4px">
+    ${resRow('Down 0–1, came back to win', r_down01+'%', `${res_down01_w} wins from ${res_down01_t} matches — after losing game 1`, 'var(--blue)', r_down01)}
+    ${resRow('Down 0–2, came back to win', r_down02+'%', `${res_down02_w} wins from ${res_down02_t} matches — after losing first two games`, r_down02>=30?'var(--blue)':'var(--red)', r_down02)}
+    ${resRow('Clutch closing rate', r_clutch+'%', `${res_close_w}W – ${res_close_l}L when final game decided by ≤2 pts`, r_clutch>=60?'var(--green)':'var(--red)', r_clutch)}
+    ${resRow('Leads blown', `${res_lead10_lost} / ${res_lead20_lost}`, `Times lost after leading 1–0 / lost after leading 2–0`, 'var(--red)', null)}
+  </div>`;
+
+// ── MONTH WIN RATE CHART ──────────────────────────────────────
+const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthStats = {};
+MD.forEach(m => {
+  const mo = parseInt(m.date.slice(5,7));
+  if(!monthStats[mo]) monthStats[mo]={w:0,l:0};
+  m.wl==='Win'?monthStats[mo].w++:monthStats[mo].l++;
+});
+const activeMonths = Object.keys(monthStats).map(Number).sort((a,b)=>a-b);
+const monthWRs = activeMonths.map(mo=>Math.round(monthStats[mo].w/(monthStats[mo].w+monthStats[mo].l)*100));
+const monthColors = monthWRs.map(r => r>=70?'rgba(26,158,110,0.8)':r>=50?'rgba(29,111,212,0.8)':'rgba(217,95,43,0.8)');
+new Chart(document.getElementById('monthChart'),{type:'bar',data:{
+  labels:activeMonths.map(mo=>monthNames[mo-1]),
+  datasets:[{
+    label:'Win %',data:monthWRs,
+    backgroundColor:monthColors,borderRadius:5,barPercentage:0.6
+  }]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+    const mo=activeMonths[ctx.dataIndex];
+    const s=monthStats[mo];
+    return `${ctx.raw}% (${s.w}W–${s.l}L)`;
+  }}}},
+  scales:{
+    x:{grid:{display:false},ticks:{font:{size:11,family:"'Red Hat Mono',monospace"},color:'#888882'}},
+    y:{min:0,max:100,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:"'Red Hat Mono',monospace"},color:'#888882',callback:v=>v+'%'}}
+  }}});
+
+// ── FORMAT COMPARE ────────────────────────────────────────────
+const tWR = Math.round(tW/tM*100);
+const lWR = Math.round(lW/lM*100);
+document.getElementById('formatCompare').innerHTML = `
+  <div style="display:flex;flex-direction:column;gap:20px;padding:8px 0">
+    ${[
+      {label:'Tournaments',w:tW,l:tL,tot:tM,rate:tWR,c:'var(--blue)'},
+      {label:'League',w:lW,l:lL,tot:lM,rate:lWR,c:'var(--green)'},
+    ].map(f=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:baseline">
+        <span style="font-weight:600;font-size:var(--text-base)">${f.label}</span>
+        <span style="font-family:'Red Hat Mono',monospace;font-size:var(--text-sm);color:${f.c};font-weight:700">${f.rate}%</span>
+      </div>
+      <div style="background:var(--surface3);border-radius:4px;height:8px;overflow:hidden">
+        <div style="width:${f.rate}%;height:100%;background:${f.c};border-radius:4px;transition:width 0.6s ease"></div>
+      </div>
+      <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);margin-top:5px">${f.w}W – ${f.l}L across ${f.tot} matches</div>
+    </div>`).join('')}
+  </div>`;
+
+// ── 5-GAME PANEL ──────────────────────────────────────────────
+const tot5 = fiveGameW.length+fiveGameL.length;
+document.getElementById('fiveGamePanel').innerHTML = `
+  <div style="display:flex;flex-direction:column;align-items:center;padding:12px 0 8px;gap:10px">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-size:52px;font-weight:900;letter-spacing:-2px;color:var(--green);line-height:1">${fiveGameW.length}</span>
+      <span style="font-family:'Red Hat Mono',monospace;font-size:16px;color:var(--muted)">—</span>
+      <span style="font-size:52px;font-weight:900;letter-spacing:-2px;color:var(--red);line-height:1">${fiveGameL.length}</span>
+    </div>
+    <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);text-transform:uppercase;letter-spacing:1px">${fiveWR}% win rate in ${tot5} five-game matches</div>
+    <div style="width:100%;background:var(--surface3);border-radius:4px;height:6px;overflow:hidden">
+      <div style="width:${fiveWR}%;height:100%;background:var(--green);border-radius:4px"></div>
+    </div>
+    <div style="font-family:'Red Hat Mono',monospace;font-size:var(--text-xs);color:var(--muted);text-align:center">You go the distance and still win more than half — a strong closer</div>
+  </div>`;
+
 function fmtD(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});}
+function fmtDateShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}
+
 function renderMatches(f){
   let data=f==='all'?sorted:f==='Win'||f==='Loss'?sorted.filter(m=>m.wl===f):sorted.filter(m=>m.type===f);
   document.getElementById('matchTbody').innerHTML=data.map(m=>`<tr>
@@ -853,10 +1354,6 @@ let h2hDonut = null;
 
 function initials(name) {
   return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-}
-
-function fmtDateShort(d) {
-  return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});
 }
 
 function renderH2H() {
