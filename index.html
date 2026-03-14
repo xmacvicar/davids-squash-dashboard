@@ -46,10 +46,14 @@ body {
 .header {
   padding: 36px 52px 32px;
   border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: flex-end;
-  flex-wrap: wrap; gap: 20px;
   background: var(--surface);
   position: relative; overflow: hidden;
+}
+.header-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 20px;
+  position: relative; z-index: 1;
 }
 .header::before {
   content: ''; position: absolute; top: -80px; right: -80px;
@@ -85,11 +89,15 @@ body {
 
 /* NAV */
 .nav {
-  display: flex; gap: 2px; padding: 12px 52px;
+  padding: 12px 52px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface); overflow-x: auto;
+  background: var(--surface);
   position: sticky; top: 0; z-index: 10;
-  align-items: center; justify-content: space-between;
+}
+.nav-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  overflow-x: auto;
 }
 .nav-tabs { display: flex; gap: 2px; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
 .theme-toggle {
@@ -117,8 +125,17 @@ body {
 [data-theme="light"] .nav-tab:hover { color: var(--ink); background: var(--surface3); }
 
 /* PAGE */
-.view { display: none; padding: 28px 52px 52px; max-width: 1400px; }
+.view { display: none; padding: 28px 52px 52px; }
 .view.active { display: block; }
+.view > * { max-width: 1400px; margin-left: auto; margin-right: auto; }
+.view > .kpi-grid,
+.view > .slabel,
+.view > .panel,
+.view > .two-col,
+.view > .three-col,
+.view > .tab-group,
+.view > .match-count,
+.view > div { max-width: 1400px; margin-left: auto; margin-right: auto; }
 .slabel {
   font-family: 'Red Hat Mono', monospace; font-size: 10px;
   letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
@@ -215,9 +232,12 @@ body {
 footer {
   border-top: 1px solid var(--border);
   padding: 18px 52px;
+  background: var(--surface);
+}
+.footer-inner {
+  max-width: 1400px; margin: 0 auto;
   font-family: 'Red Hat Mono', monospace; font-size: 10px; color: var(--muted);
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  background: var(--surface);
 }
 
 @media (max-width: 900px) {
@@ -225,7 +245,8 @@ footer {
   .header::before, .header::after { display: none; }
   .header h1 { font-size: 28px; letter-spacing: -0.5px; }
   .header-meta { align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .nav { padding: 10px 16px; gap: 4px; flex-wrap: nowrap; }
+  .nav { padding: 10px 16px; }
+  .nav-inner { gap: 4px; }
   .nav-tabs { gap: 4px; }
   .nav-tab { font-size: 11px; padding: 6px 12px; }
   .theme-toggle { margin-left: 8px; padding: 6px 10px; font-size: 9px; }
@@ -324,30 +345,34 @@ footer {
 
 <!-- HEADER -->
 <div class="header">
-  <div>
-    <div class="eyebrow">Squash · Career Statistics · 2016–2026</div>
-    <h1><span class="name">David MacVicar</span><br><span class="acc">Match History</span> Dashboard</h1>
-  </div>
-  <div class="header-meta">
-    <span class="badge club">&#9679; Club Sportif Côte de Liesse CDL</span>
-    <span class="badge win" id="h-wins"></span>
-    <span class="badge loss" id="h-losses"></span>
-    <span class="badge" id="h-wr"></span>
+  <div class="header-inner">
+    <div>
+      <div class="eyebrow">Squash · Career Statistics · 2016–2026</div>
+      <h1><span class="name">David MacVicar</span><br><span class="acc">Match History</span> Dashboard</h1>
+    </div>
+    <div class="header-meta">
+      <span class="badge club">&#9679; Club Sportif Côte de Liesse CDL</span>
+      <span class="badge win" id="h-wins"></span>
+      <span class="badge loss" id="h-losses"></span>
+      <span class="badge" id="h-wr"></span>
+    </div>
   </div>
 </div>
 
 <!-- NAV -->
 <div class="nav">
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchView('overview',this)">Overview</button>
-    <button class="nav-tab" onclick="switchView('matches',this)">Match Log</button>
-    <button class="nav-tab" onclick="switchView('opponents',this)">Opponents</button>
-    <button class="nav-tab" onclick="switchView('trends',this)">Yearly Trends</button>
-    <button class="nav-tab" onclick="switchView('h2h',this)">Head to Head</button>
+  <div class="nav-inner">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('overview',this)">Overview</button>
+      <button class="nav-tab" onclick="switchView('matches',this)">Match Log</button>
+      <button class="nav-tab" onclick="switchView('opponents',this)">Opponents</button>
+      <button class="nav-tab" onclick="switchView('trends',this)">Yearly Trends</button>
+      <button class="nav-tab" onclick="switchView('h2h',this)">Head to Head</button>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle light/dark mode">
+      <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+    </button>
   </div>
-  <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle light/dark mode">
-    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
-  </button>
 </div>
 
 <!-- ═══ OVERVIEW ═══ -->
@@ -488,8 +513,10 @@ footer {
 
 <!-- FOOTER -->
 <footer>
-  <span>David MacVicar · Squash Career Dashboard</span>
-  <span>Club Sportif Côte de Liesse CDL · 2016–2026</span>
+  <div class="footer-inner">
+    <span>David MacVicar · Squash Career Dashboard</span>
+    <span>Club Sportif Côte de Liesse CDL · 2016–2026</span>
+  </div>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
