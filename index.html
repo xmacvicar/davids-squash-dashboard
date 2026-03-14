@@ -86,6 +86,14 @@ body {
 .badge.win  { border-color: rgba(26,158,110,0.4); color: var(--green); }
 .badge.loss { border-color: rgba(217,95,43,0.4);  color: var(--red); }
 .badge.club { border-color: rgba(29,111,212,0.35); color: var(--blue); }
+.badge.club-locker {
+  border-color: rgba(124,82,204,0.35); color: var(--purple);
+  text-decoration: none; transition: all 0.15s;
+}
+.badge.club-locker:hover {
+  background: rgba(124,82,204,0.08);
+  border-color: rgba(124,82,204,0.6);
+}
 
 /* NAV */
 .nav {
@@ -352,6 +360,8 @@ footer {
     </div>
     <div class="header-meta">
       <span class="badge club">&#9679; Club Sportif Côte de Liesse CDL</span>
+      <a href="https://clublocker.com/users/99447/home" target="_blank" rel="noopener" class="badge club-locker">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;display:inline-block;vertical-align:middle;margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Club Locker Profile</a>
       <span class="badge win" id="h-wins"></span>
       <span class="badge loss" id="h-losses"></span>
       <span class="badge" id="h-wr"></span>
@@ -479,8 +489,8 @@ footer {
   </div>
   <div class="two-col">
     <div class="panel">
-      <div class="panel-title">Events per Year</div>
-      <div class="panel-sub">Distinct events entered per season</div>
+      <div class="panel-title">Tournaments per Year</div>
+      <div class="panel-sub">Distinct tournaments entered per season</div>
       <div style="position:relative;height:180px"><canvas id="eventsChart"></canvas></div>
     </div>
     <div class="panel">
@@ -623,7 +633,7 @@ const wins=MD.filter(m=>m.wl==='Win').length;
 const losses=MD.filter(m=>m.wl==='Loss').length;
 const total=MD.length;
 const wr=Math.round(wins/total*100);
-const evSet=new Set(MD.map(m=>m.event));
+const evSet=new Set(MD.filter(m=>m.type==='tournament').map(m=>m.event));
 const oppSet=new Set(MD.map(m=>m.opp));
 
 document.getElementById('h-wins').textContent=wins+' wins';
@@ -634,7 +644,7 @@ const kpis=[
   {label:'Matches Played',val:total,sub:'career total',c:'#1d6fd4'},
   {label:'Total Wins',val:wins,sub:wr+'% win rate',c:'#1a9e6e'},
   {label:'Total Losses',val:losses,sub:(100-wr)+'% loss rate',c:'#d95f2b'},
-  {label:'Events Entered',val:evSet.size,sub:'distinct events',c:'#7c52cc'},
+  {label:'Tournaments',val:evSet.size,sub:'career total',c:'#7c52cc'},
   {label:'Unique Opponents',val:oppSet.size,sub:'players faced',c:'#b8860b'},
 ];
 document.getElementById('kpiGrid').innerHTML=kpis.map(k=>`
@@ -649,7 +659,7 @@ MD.forEach(m=>{
   const y=m.date.slice(0,4);
   if(!years[y])years[y]={w:0,l:0,ev:new Set()};
   m.wl==='Win'?years[y].w++:years[y].l++;
-  years[y].ev.add(m.event);
+  if(m.type==='tournament') years[y].ev.add(m.event);
 });
 const yrs=Object.keys(years).sort();
 
@@ -711,7 +721,7 @@ document.getElementById('streakPanel').innerHTML=`
     </div>
   </div>`;
 
-function fmtD(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{year:'2-digit',month:'short',day:'numeric'});}
+function fmtD(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});}
 function renderMatches(f){
   let data=f==='all'?sorted:f==='Win'||f==='Loss'?sorted.filter(m=>m.wl===f):sorted.filter(m=>m.type===f);
   document.getElementById('matchTbody').innerHTML=data.map(m=>`<tr>
@@ -837,7 +847,7 @@ function initials(name) {
 }
 
 function fmtDateShort(d) {
-  return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'2-digit'});
+  return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});
 }
 
 function renderH2H() {
