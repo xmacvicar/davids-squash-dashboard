@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,6 +7,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Red+Hat+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
+  --bg: #131311;
+  --surface: #1e1e1b;
+  --surface2: #252521;
+  --surface3: #2e2e29;
+  --border: #2e2e28;
+  --border2: #3e3e38;
+  --ink: #f0f0ec;
+  --ink2: #b8b8b0;
+  --muted: #666660;
+  --green: #1a9e6e;
+  --red: #d95f2b;
+  --blue: #1d6fd4;
+  --purple: #7c52cc;
+  --yellow: #b8860b;
+}
+[data-theme="light"] {
   --bg: #f5f5f3;
   --surface: #ffffff;
   --surface2: #f0f0ee;
@@ -16,18 +32,6 @@
   --ink: #1a1a18;
   --ink2: #4a4a46;
   --muted: #888882;
-  --green: #1a9e6e;
-  --red: #d95f2b;
-  --blue: #1d6fd4;
-  --purple: #7c52cc;
-  --yellow: #b8860b;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131311; --surface: #1e1e1b; --surface2: #252521;
-    --surface3: #2e2e29; --border: #2e2e28; --border2: #3e3e38;
-    --ink: #f0f0ec; --ink2: #b8b8b0; --muted: #666660;
-  }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100vh; }
@@ -85,7 +89,22 @@ body {
   border-bottom: 1px solid var(--border);
   background: var(--surface); overflow-x: auto;
   position: sticky; top: 0; z-index: 10;
+  align-items: center; justify-content: space-between;
 }
+.nav-tabs { display: flex; gap: 2px; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
+.theme-toggle {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--border2); background: none;
+  cursor: pointer; transition: all 0.15s; margin-left: 12px;
+  color: var(--muted);
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--border); background: var(--surface2); }
+.theme-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* toggle track — no longer needed */
+.toggle-track { display: none; }
+.toggle-thumb { display: none; }
 .nav-tab {
   font-family: 'Red Hat Mono', monospace; font-size: 11px;
   padding: 7px 16px; border-radius: 6px; border: 1px solid transparent;
@@ -93,11 +112,9 @@ body {
   white-space: nowrap; transition: all 0.15s; letter-spacing: 0.5px;
 }
 .nav-tab:hover { color: var(--ink); background: var(--surface3); }
-.nav-tab.active { background: #1a1a18; border-color: #1a1a18; color: #ffffff; }
-@media (prefers-color-scheme: dark) {
-  .nav-tab.active { background: #f0f0ec; border-color: #f0f0ec; color: #1a1a18; }
-  .nav-tab:hover { color: var(--ink); background: var(--surface3); }
-}
+.nav-tab.active { background: #f0f0ec; border-color: #f0f0ec; color: #1a1a18; }
+[data-theme="light"] .nav-tab.active { background: #1a1a18; border-color: #1a1a18; color: #ffffff; }
+[data-theme="light"] .nav-tab:hover { color: var(--ink); background: var(--surface3); }
 
 /* PAGE */
 .view { display: none; padding: 28px 52px 52px; max-width: 1400px; }
@@ -143,13 +160,19 @@ body {
 
 /* TABLE */
 .mtbl { width: 100%; border-collapse: collapse; }
+.mtbl thead { background: var(--surface2); }
 .mtbl th {
-  font-family: 'Red Hat Mono', monospace; font-size: 9px; letter-spacing: 1.5px;
+  font-family: 'Red Hat Mono', monospace; font-size: 10px; letter-spacing: 1.5px;
   text-transform: uppercase; color: var(--muted); text-align: left;
-  padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); white-space: nowrap;
+  padding: 13px 16px; border-bottom: 2px solid var(--border2); white-space: nowrap;
+  font-weight: 600;
 }
+.mtbl th:first-child { padding-left: 24px; }
+.mtbl th:last-child  { padding-right: 24px; }
 .mtbl th.r { text-align: right; }
-.mtbl td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.mtbl td { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.mtbl td:first-child { padding-left: 24px; }
+.mtbl td:last-child  { padding-right: 24px; }
 .mtbl td.mono { font-family: 'Red Hat Mono', monospace; font-size: 11px; color: var(--ink2); text-align: right; }
 .mtbl td.name { font-weight: 600; }
 .mtbl td.muted { font-family: 'Red Hat Mono', monospace; font-size: 10px; color: var(--muted); }
@@ -173,10 +196,8 @@ body {
   border: 1px solid var(--border2); background: none; color: var(--muted); transition: all 0.15s;
 }
 .tab-btn:hover { color: var(--ink); background: var(--surface3); }
-.tab-btn.active { background: #1a1a18; border-color: #1a1a18; color: #ffffff; }
-@media (prefers-color-scheme: dark) {
-  .tab-btn.active { background: #f0f0ec; border-color: #f0f0ec; color: #1a1a18; }
-}
+.tab-btn.active { background: #f0f0ec; border-color: #f0f0ec; color: #1a1a18; }
+[data-theme="light"] .tab-btn.active { background: #1a1a18; border-color: #1a1a18; color: #ffffff; }
 
 /* RANK */
 .rank-badge {
@@ -204,8 +225,10 @@ footer {
   .header::before, .header::after { display: none; }
   .header h1 { font-size: 28px; letter-spacing: -0.5px; }
   .header-meta { align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .nav { padding: 10px 16px; gap: 4px; }
+  .nav { padding: 10px 16px; gap: 4px; flex-wrap: nowrap; }
+  .nav-tabs { gap: 4px; }
   .nav-tab { font-size: 11px; padding: 6px 12px; }
+  .theme-toggle { margin-left: 8px; padding: 6px 10px; font-size: 9px; }
   .view { padding: 20px 16px 40px; }
   footer { padding: 16px 20px; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -315,11 +338,16 @@ footer {
 
 <!-- NAV -->
 <div class="nav">
-  <button class="nav-tab active" onclick="switchView('overview',this)">Overview</button>
-  <button class="nav-tab" onclick="switchView('matches',this)">Match Log</button>
-  <button class="nav-tab" onclick="switchView('opponents',this)">Opponents</button>
-  <button class="nav-tab" onclick="switchView('trends',this)">Yearly Trends</button>
-  <button class="nav-tab" onclick="switchView('h2h',this)">Head to Head</button>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('overview',this)">Overview</button>
+    <button class="nav-tab" onclick="switchView('matches',this)">Match Log</button>
+    <button class="nav-tab" onclick="switchView('opponents',this)">Opponents</button>
+    <button class="nav-tab" onclick="switchView('trends',this)">Yearly Trends</button>
+    <button class="nav-tab" onclick="switchView('h2h',this)">Head to Head</button>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle light/dark mode">
+    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+  </button>
 </div>
 
 <!-- ═══ OVERVIEW ═══ -->
@@ -381,12 +409,12 @@ footer {
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table class="mtbl" style="min-width:520px">
       <thead><tr>
-        <th style="padding-left:20px">Date</th>
+        <th>Date</th>
         <th>Opponent</th>
         <th>Event</th>
         <th class="r">Result</th>
         <th class="r">Score</th>
-        <th class="r" style="padding-right:20px">Type</th>
+        <th class="r">Type</th>
       </tr></thead>
       <tbody id="matchTbody"></tbody>
     </table>
@@ -402,13 +430,13 @@ footer {
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table class="mtbl" style="min-width:500px">
       <thead><tr>
-        <th style="padding-left:20px">#</th>
+        <th>#</th>
         <th>Opponent</th>
         <th class="r">Played</th>
         <th class="r">Won</th>
         <th class="r">Lost</th>
         <th class="r">Win%</th>
-        <th class="r" style="padding-right:20px">Record</th>
+        <th class="r">Record</th>
       </tr></thead>
       <tbody id="oppTbody"></tbody>
     </table>
@@ -660,12 +688,12 @@ function fmtD(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{year
 function renderMatches(f){
   let data=f==='all'?sorted:f==='Win'||f==='Loss'?sorted.filter(m=>m.wl===f):sorted.filter(m=>m.type===f);
   document.getElementById('matchTbody').innerHTML=data.map(m=>`<tr>
-    <td class="muted" style="padding-left:20px">${fmtD(m.date)}</td>
+    <td class="muted">${fmtD(m.date)}</td>
     <td class="name">${m.opp}</td>
     <td class="muted" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.event}</td>
     <td style="text-align:right"><span class="res-pill ${m.wl.toLowerCase()}">${m.wl}</span></td>
     <td class="mono">${m.result}</td>
-    <td class="muted" style="text-align:right;padding-right:20px">${m.type}</td>
+    <td class="muted" style="text-align:right">${m.type}</td>
   </tr>`).join('');
   document.getElementById('matchCount').textContent=`showing ${data.length} of ${total} matches`;
 }
@@ -684,13 +712,13 @@ document.getElementById('oppTbody').innerHTML=topOpps.map(([n,r],i)=>{
   const t=r.w+r.l,p=Math.round(r.w/t*100);
   const c=p>=60?'var(--green)':p<=40?'var(--red)':'var(--ink2)';
   return `<tr>
-    <td style="padding-left:20px"><span class="rank-badge ${rc[i]||''}">${i+1}</span></td>
+    <td><span class="rank-badge ${rc[i]||''}">${i+1}</span></td>
     <td class="name">${n}</td>
     <td class="mono">${t}</td>
     <td class="mono" style="color:var(--green)">${r.w}</td>
     <td class="mono" style="color:var(--red)">${r.l}</td>
     <td class="mono" style="color:${c};font-weight:600">${p}%</td>
-    <td style="text-align:right;padding-right:20px">
+    <td style="text-align:right">
       <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
         <span style="font-family:'Red Hat Mono',monospace;font-size:10px;color:var(--muted)">${r.w}–${r.l}</span>
         <span class="mini-heat"><span class="mini-heat-fill" style="width:${p}%;background:${c}"></span></span>
@@ -740,7 +768,32 @@ function switchView(id,btn){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ── HEAD TO HEAD ──────────────────────────────────────────────
+// ── THEME TOGGLE ────────────────────────────────────────────
+const SUN_ICON = `<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+const MOON_ICON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+
+(function() {
+  const saved = localStorage.getItem('dmTheme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn(saved);
+})();
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dmTheme', next);
+  updateThemeBtn(next);
+}
+
+function updateThemeBtn(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (!icon) return;
+  // In dark mode show sun (click to go light); in light mode show moon (click to go dark)
+  icon.innerHTML = theme === 'dark' ? SUN_ICON : MOON_ICON;
+  document.getElementById('themeBtn').title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+}
+
 // Build unique opponent list (faced at least once)
 const allOpps = [...new Set(MD.map(m=>m.opp))].sort();
 const sel = document.getElementById('h2hSelect');
@@ -833,8 +886,8 @@ function renderH2H() {
 
     <!-- MATCH HISTORY -->
     <div class="panel" style="padding:0;overflow:hidden">
-      <div style="padding:14px 20px 10px;font-family:'Red Hat Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border)">Match History</div>
-      <div class="h2h-match-list" style="padding:0 20px">
+      <div style="padding:13px 16px;font-family:'Red Hat Mono',monospace;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid var(--border2);background:var(--surface2)">Match History</div>
+      <div class="h2h-match-list" style="padding:0 16px">
         ${matches.map(m=>`
         <div class="h2h-match-row">
           <span class="h2h-match-date">${fmtDateShort(m.date)}</span>
