@@ -133,6 +133,8 @@ body {
 .panel-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
 .panel-sub { font-family: 'Red Hat Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 16px; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.mb16 { margin-bottom: 16px; }
 
 /* LEGEND */
 .legend { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -200,7 +202,7 @@ footer {
 @media (max-width: 900px) {
   .header, .view, footer, .nav { padding-left: 20px; padding-right: 20px; }
   .kpi-grid { grid-template-columns: repeat(2,1fr); }
-  .two-col { grid-template-columns: 1fr; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
   .header h1 { font-size: 26px; }
 }
 </style>
@@ -245,17 +247,32 @@ footer {
     <div style="position:relative;height:200px"><canvas id="yearChart"></canvas></div>
   </div>
 
-  <div class="two-col">
-    <div class="panel">
-      <div class="panel-title">Match Type Split</div>
-      <div class="panel-sub">Tournament vs league distribution</div>
-      <div style="position:relative;height:170px"><canvas id="typeChart"></canvas></div>
+  <div class="slabel mb24">Career Wins / Losses</div>
+  <div class="three-col mb16">
+    <div class="panel" style="display:flex;flex-direction:column;align-items:center;padding:28px 20px">
+      <div class="panel-title" style="text-align:center;margin-bottom:2px">Overall</div>
+      <div class="panel-sub" style="text-align:center">All matches combined</div>
+      <div style="position:relative;height:180px;width:180px"><canvas id="donutAll"></canvas></div>
+      <div id="legendAll" style="display:flex;gap:16px;margin-top:14px;font-family:'Red Hat Mono',monospace;font-size:11px;color:var(--muted)"></div>
     </div>
-    <div class="panel">
-      <div class="panel-title">Best Winning Streak</div>
-      <div class="panel-sub">Longest consecutive wins in career</div>
-      <div id="streakPanel"></div>
+    <div class="panel" style="display:flex;flex-direction:column;align-items:center;padding:28px 20px">
+      <div class="panel-title" style="text-align:center;margin-bottom:2px">Tournaments</div>
+      <div class="panel-sub" style="text-align:center">Competitive events only</div>
+      <div style="position:relative;height:180px;width:180px"><canvas id="donutTournament"></canvas></div>
+      <div id="legendTournament" style="display:flex;gap:16px;margin-top:14px;font-family:'Red Hat Mono',monospace;font-size:11px;color:var(--muted)"></div>
     </div>
+    <div class="panel" style="display:flex;flex-direction:column;align-items:center;padding:28px 20px">
+      <div class="panel-title" style="text-align:center;margin-bottom:2px">League</div>
+      <div class="panel-sub" style="text-align:center">Montreal league matches</div>
+      <div style="position:relative;height:180px;width:180px"><canvas id="donutLeague"></canvas></div>
+      <div id="legendLeague" style="display:flex;gap:16px;margin-top:14px;font-family:'Red Hat Mono',monospace;font-size:11px;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Best Winning Streak</div>
+    <div class="panel-sub">Longest consecutive wins in career</div>
+    <div id="streakPanel"></div>
   </div>
 </div>
 
@@ -477,10 +494,37 @@ new Chart(document.getElementById('yearChart'),{type:'bar',data:{labels:yrs,data
     y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:"'Red Hat Mono',monospace"},color:'#888882',stepSize:2}}
   }}});
 
-const tM=MD.filter(m=>m.type==='tournament').length;
-const lM=MD.filter(m=>m.type==='league').length;
-new Chart(document.getElementById('typeChart'),{type:'doughnut',data:{labels:['Tournament','League'],datasets:[{data:[tM,lM],backgroundColor:['#1d6fd4','#1a9e6e'],borderWidth:0,hoverOffset:4}]},
-  options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11,family:"'Red Hat Mono',monospace"},color:'#888882',padding:14,usePointStyle:true,pointStyleWidth:8}}}}});
+function makeDonut(id, legendId, w, l) {
+  const wr = Math.round(w/(w+l)*100);
+  new Chart(document.getElementById(id), {
+    type: 'doughnut',
+    data: {
+      labels: ['Won', 'Lost'],
+      datasets: [{
+        data: [w, l],
+        backgroundColor: ['#1a9e6e', '#d95f2b'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: { legend: { display: false }, tooltip: { enabled: true } }
+    }
+  });
+  document.getElementById(legendId).innerHTML =
+    `<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;border-radius:2px;background:#1a9e6e;display:inline-block"></span>Won ${w} <span style="opacity:0.5">(${wr}%)</span></span>` +
+    `<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;border-radius:2px;background:#d95f2b;display:inline-block"></span>Lost ${l} <span style="opacity:0.5">(${100-wr}%)</span></span>`;
+}
+
+const tW = MD.filter(m=>m.type==='tournament'&&m.wl==='Win').length;
+const tL = MD.filter(m=>m.type==='tournament'&&m.wl==='Loss').length;
+const lW = MD.filter(m=>m.type==='league'&&m.wl==='Win').length;
+const lL = MD.filter(m=>m.type==='league'&&m.wl==='Loss').length;
+
+makeDonut('donutAll', 'legendAll', wins, losses);
+makeDonut('donutTournament', 'legendTournament', tW, tL);
+makeDonut('donutLeague', 'legendLeague', lW, lL);
 
 let best=0,cur=0,bestStart='',tmpStart='';
 [...MD].sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{
