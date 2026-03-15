@@ -76,6 +76,14 @@ body {
   background: radial-gradient(circle, rgba(26,158,110,0.05) 0%, transparent 70%);
   pointer-events: none;
 }
+.header-left { display: flex; align-items: center; gap: 20px; }
+.header-avatar {
+  width: 88px; height: 88px; border-radius: 50%;
+  object-fit: cover; object-position: top center;
+  border: 2px solid rgba(29,111,212,0.4);
+  box-shadow: 0 0 0 4px rgba(29,111,212,0.08);
+  flex-shrink: 0;
+}
 .eyebrow {
   font-family: 'Red Hat Mono', monospace; font-size: var(--text-xs);
   letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
@@ -261,6 +269,7 @@ footer {
   .header { padding: 24px 20px 20px; flex-direction: column; align-items: flex-start; gap: 14px; }
   .header::before, .header::after { display: none; }
   .header h1 { font-size: 30px; letter-spacing: -0.5px; }
+  .header-avatar { width: 64px; height: 64px; }
   .header-meta { align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: 6px; }
   .nav { padding: 10px 16px; }
   .nav-inner { gap: 4px; }
@@ -363,9 +372,12 @@ footer {
 <!-- HEADER -->
 <div class="header">
   <div class="header-inner">
-    <div>
-      <div class="eyebrow">Squash · Career Statistics · 2016–2026</div>
-      <h1><span class="name">David MacVicar</span><br><span class="acc">Match History</span> Dashboard</h1>
+    <div class="header-left">
+      <img src="davidsquash.jpg" alt="David MacVicar playing squash" class="header-avatar">
+      <div>
+        <div class="eyebrow">Squash · Career Statistics · 2016–2026</div>
+        <h1><span class="name">David MacVicar</span><br><span class="acc">Match History</span> Dashboard</h1>
+      </div>
     </div>
     <div class="header-meta">
       <span class="badge club">&#9679; Club Sportif Côte de Liesse CDL</span>
