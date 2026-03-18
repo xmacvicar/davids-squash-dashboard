@@ -43,7 +43,6 @@ def prompt(label, default=None, choices=None):
         if choices:
             hint += f" ({'/'.join(choices)})"
         raw = input(f"  {label}{hint}: ").strip()
-
         if not raw and default is not None:
             return default
         if choices and raw not in choices:
@@ -93,19 +92,36 @@ def build():
     with open(TEMPLATE, "r", encoding="utf-8") as f:
         template = f.read()
 
-    rows = []
+    # Build MD array and SCORES dict from CSV
+    md_rows = []
+    scores_dict = {}
+    date_counters = {}
+
     with open(MATCHES, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
+            d = row["Date"]
             entry = (
-                f'  {{date:"{row["Date"]}",opp:"{row["Opponent"]}",'
+                f'  {{date:"{d}",opp:"{row["Opponent"]}",'
                 f'event:"{row["Event"]}",wl:"{row["Win/Loss"]}",'
                 f'result:"{row["Score"]}",type:"{row["Type"]}"'
             )
             if row.get("Game Scores", "").strip():
                 entry += f',games:"{row["Game Scores"]}"'
             entry += "},"
-            rows.append(entry)
-    matches_js = "const MD=[\n" + "\n".join(rows) + "\n];"
+            md_rows.append(entry)
+
+            if row.get("Game Scores", "").strip():
+                count = date_counters.get(d, 0)
+                key = d if count == 0 else f"{d}{chr(97 + count)}"
+                if count == 1 and d in scores_dict:
+                    scores_dict[d + "a"] = scores_dict.pop(d)
+                scores_dict[key] = row["Game Scores"]
+                date_counters[d] = count + 1
+            else:
+                date_counters[d] = date_counters.get(d, 0) + 1
+
+    matches_js = "const MD=[\n" + "\n".join(md_rows) + "\n];"
+    scores_js  = "const SCORES=" + json.dumps(scores_dict, indent=2) + ";"
 
     with open(RATINGS, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -113,10 +129,12 @@ def build():
 
     output = template.replace("const MD=/*MATCHES_DATA*/[];", matches_js)
     output = output.replace("const RANK_DATA=/*RATINGS_DATA*/{};", ratings_js)
+    output = output.replace("const SCORES=/*SCORES_DATA*/{};", scores_js)
 
-    if "/*MATCHES_DATA*/" in output or "/*RATINGS_DATA*/" in output:
-        print("\nx  Build failed -- placeholder not found in template.html.\n")
-        sys.exit(1)
+    for placeholder in ["/*MATCHES_DATA*/", "/*RATINGS_DATA*/", "/*SCORES_DATA*/"]:
+        if placeholder in output:
+            print(f"\nx  Build failed -- {placeholder} not replaced in template.html.\n")
+            sys.exit(1)
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
         f.write(output)
@@ -174,7 +192,7 @@ def main():
             break
         print("    x  Use format like 3-1 or 2-3")
 
-    print("\n  Game scores are optional but power deeper stats (e.g. 11-7, 9-11, 11-5)")
+    print("\n  Game scores power deeper stats (e.g. 11-7, 9-11, 11-5, 11-8)")
     game_scores = prompt("Game scores", default="")
 
     row = {
@@ -209,8 +227,7 @@ def main():
 
     build()
 
-    commit_msg = f"Add match vs {opponent} ({raw_date})"
-    git_commit_and_push(commit_msg)
+    git_commit_and_push(f"Add match vs {opponent} ({raw_date})")
 
     print(f"\n  v Live on GitHub Pages shortly")
     print(f"  {wl} vs {opponent} | {score} | {event}\n")
