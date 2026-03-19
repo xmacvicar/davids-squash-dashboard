@@ -514,6 +514,7 @@ footer {
         <th>Event</th>
         <th class="r">Result</th>
         <th class="r">Score</th>
+        <th class="r">Game Scores</th>
         <th class="r">Type</th>
       </tr></thead>
       <tbody id="matchTbody"></tbody>
@@ -1069,7 +1070,7 @@ MD.forEach((m, i) => {
   const el = document.getElementById('bagelMeter');
   const title = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:1.3rem">🥯</span><div class="panel-title" style="margin:0">Bagel Meter</div></div>`;
   if (bagelCount === 0) {
-    el.innerHTML = title + `<div style="font-family:'Red Hat Mono',monospace;font-size:12px;color:var(--green);letter-spacing:0.5px">...I've never been bageled!!</div>`;
+    el.innerHTML = title + `<div style="font-family:'Red Hat Mono',monospace;font-size:12px;color:var(--green);letter-spacing:0.5px">...I've never been bageled!</div>`;
   } else {
     const matchList = bagelMatches.map(m=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:var(--text-xs);color:var(--ink2)">${fmtDateShort(m.date)} &mdash; ${m.opp} &middot; ${m.event}</div>`).join('');
     el.innerHTML = title + `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="font-size:2rem;font-weight:700;color:var(--red)">${bagelCount}</span><span style="font-family:'Red Hat Mono',monospace;font-size:11px;color:var(--muted)">bagel${bagelCount===1?'':'s'} received</span></div>${matchList}`;
@@ -1337,6 +1338,7 @@ function renderMatches(f){
     <td class="muted" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.event}</td>
     <td style="text-align:right"><span class="res-pill ${m.wl.toLowerCase()}">${m.wl}</span></td>
     <td class="mono">${m.result}</td>
+    <td class="muted" style="text-align:right">${m.games||'—'}</td>
     <td class="muted" style="text-align:right">${m.type}</td>
   </tr>`).join('');
   document.getElementById('matchCount').textContent=`showing ${data.length} of ${total} matches`;
@@ -1875,7 +1877,7 @@ function renderH2H() {
           <span class="h2h-match-res ${m.wl==='Win'?'w':'l'}">${m.wl==='Win'?'WIN':'LOSS'}</span>
           <span class="h2h-match-ev">${m.event}</span>
           <div style="margin-left:auto;text-align:right;flex-shrink:0">
-            <span class="h2h-match-score" style="margin-left:0">${m.result}</span>
+            <span class="h2h-match-score" style="margin-left:0;font-weight:700">${m.result}</span>
             ${m.games?`<div style="font-family:'Red Hat Mono',monospace;font-size:9px;color:var(--muted);opacity:0.75;margin-top:2px">${m.games}</div>`:''}
           </div>
         </div>`).join('')}

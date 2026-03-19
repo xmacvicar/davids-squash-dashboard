@@ -514,6 +514,7 @@ footer {
         <th>Event</th>
         <th class="r">Result</th>
         <th class="r">Score</th>
+        <th class="r">Game Scores</th>
         <th class="r">Type</th>
       </tr></thead>
       <tbody id="matchTbody"></tbody>
@@ -1147,6 +1148,7 @@ function renderMatches(f){
     <td class="muted" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.event}</td>
     <td style="text-align:right"><span class="res-pill ${m.wl.toLowerCase()}">${m.wl}</span></td>
     <td class="mono">${m.result}</td>
+    <td class="muted" style="text-align:right">${m.games||'—'}</td>
     <td class="muted" style="text-align:right">${m.type}</td>
   </tr>`).join('');
   document.getElementById('matchCount').textContent=`showing ${data.length} of ${total} matches`;
