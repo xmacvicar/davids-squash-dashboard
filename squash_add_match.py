@@ -79,9 +79,13 @@ def check_files():
 # ─────────────────────────────────────────────
 
 def append_to_csv(row):
-    with open(MATCHES, "a", newline="", encoding="utf-8") as f:
+    with open(MATCHES, newline="", encoding="utf-8") as f:
+        existing = list(csv.DictReader(f))
+    with open(MATCHES, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer.writeheader()
         writer.writerow(row)
+        writer.writerows(existing)
 
 
 # ─────────────────────────────────────────────
