@@ -53,4 +53,4 @@ This rebuilds `index.html` with the updated rankings and deploys it.
 
 - **Never edit `index.html` directly** — your changes will be overwritten on the next build
 - **Never edit `template.html`** unless you're making a structural change to the dashboard itself
-- `matches.csv` is safe to open and edit in Excel or Numbers if you need to fix a past entry — just run `python3 build.py --push` afterwards
+- **If you manually edit `matches.csv`** (e.g. to fix a past entry), you must run `python3 build.py --push` afterwards — editing the CSV alone does nothing to the live site
