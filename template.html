@@ -879,7 +879,7 @@ MD.forEach((m, i) => {
   const el = document.getElementById('bagelMeter');
   const title = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:1.3rem">🥯</span><div class="panel-title" style="margin:0">Bagel Meter</div></div>`;
   if (bagelCount === 0) {
-    el.innerHTML = title + `<div style="font-family:'Red Hat Mono',monospace;font-size:12px;color:var(--green);letter-spacing:0.5px">...but I've never been bageled!</div>`;
+    el.innerHTML = title + `<div style="font-family:'Red Hat Mono',monospace;font-size:12px;color:var(--green);letter-spacing:0.5px">...I've never been bageled!</div>`;
   } else {
     const matchList = bagelMatches.map(m=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:var(--text-xs);color:var(--ink2)">${fmtDateShort(m.date)} &mdash; ${m.opp} &middot; ${m.event}</div>`).join('');
     el.innerHTML = title + `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="font-size:2rem;font-weight:700;color:var(--red)">${bagelCount}</span><span style="font-family:'Red Hat Mono',monospace;font-size:11px;color:var(--muted)">bagel${bagelCount===1?'':'s'} received</span></div>${matchList}`;
