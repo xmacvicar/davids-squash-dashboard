@@ -762,7 +762,7 @@ footer {
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px">
       <div>
         <div class="panel-title">Rating Over Time</div>
-        <div class="panel-sub">Universal Squash Rating (USR) — higher is better · full career history</div>
+        <div class="panel-sub">One rating, shared by every organisation — higher is better</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
         <button class="tab-btn active" id="rRating-all" onclick="setRatingRange('all',this)">All time</button>
@@ -1517,6 +1517,14 @@ function initials(name) {
 
 // ── RANKING DATA ─────────────────────────────────────────────
 const RANK_DATA=/*RATINGS_DATA*/{};
+// Your rating is the same in every org (only rankings differ), but each org publishes
+// on its own schedule. Merge them into one series: one point per date, preferring USR.
+const RATING_SERIES=(()=>{
+  const byDate={};
+  ['Universal Squash Rating|All Men','Squash Canada|All Men','Squash Quebec|All Men',
+   ...Object.keys(RANK_DATA)].forEach(k=>(RANK_DATA[k]||[]).forEach(p=>{ if(!(p.d in byDate)) byDate[p.d]={d:p.d,rt:p.rt}; }));
+  return Object.keys(byDate).sort().map(d=>byDate[d]);
+})();
 
 // ── RANKING CHART STATE ───────────────────────────────────────
 let rankOrg = 'qc', rankDiv = 'allmen';
@@ -1666,14 +1674,12 @@ function initRankingView() {
     </div>`;
   }).join('');
 
-  // Rating chart — use QC All Men (longest history, same rating scale)
-  // Build full rating series: QC All Men goes back to 2020, USR only to 2022
-  // We'll use QC All Men rating for the full picture since rating is cross-org
+  // Rating chart — uses RATING_SERIES (all orgs merged)
   let ratingRange = 'all';
 
   function buildRatingData(range) {
-    const src = RANK_DATA['Squash Quebec|All Men'];
-    if (!src) return [];
+    const src = RATING_SERIES;
+    if (!src.length) return [];
     if (range === 'all') return thinData(src, 120);
     const now = new Date(src[src.length-1].d+'T12:00:00');
     const cutoff = new Date(now);
@@ -1987,9 +1993,7 @@ function renderH2H() {
     card('Current Streak',`${streak} ${won?'W':'L'}`,`${streak===1?(won?'win':'loss'):(won?'wins':'losses')} in a row`,won?'#1a9e6e':'#d95f2b'),
     card('Last 10 Matches',`${l10w}–${l10.length-l10w}`,`${l10r}% · ${diff===0?'level with':`<span style="color:${diff>0?'var(--green)':'var(--red)'}">${diff>0?'▲':'▼'} ${Math.abs(diff)} pts</span> vs`} career`,'#1d6fd4'),
   ];
-  // Rating is shared across orgs, but they publish on different weeks: use the freshest series
-  const rs=Object.values(RANK_DATA).filter(a=>a.length)
-    .reduce((best,a)=>!best||a[a.length-1].d>best[best.length-1].d?a:best,null);
+  const rs=RATING_SERIES;
   if(rs&&rs.length){
     const cur=rs[rs.length-1];
     const cutoff=new Date(cur.d+'T12:00:00'); cutoff.setMonth(cutoff.getMonth()-3);
