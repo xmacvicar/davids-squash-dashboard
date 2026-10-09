@@ -1,0 +1,46 @@
+name: Update ratings
+
+# Pulls the latest ClubLocker rankings weekly and rebuilds the site.
+# New ranking periods are published on Wednesdays.
+on:
+  schedule:
+    - cron: "0 12 * * 4"   # Thursdays 12:00 UTC (8am Montreal)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch rankings
+        run: python3 update_ratings.py
+
+      # Pushes made with GITHUB_TOKEN don't trigger the rebuild workflow,
+      # so rebuild index.html here.
+      - name: Build index.html
+        run: python3 build.py
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet ratings.json index.html; then
+            echo "No new rankings"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ratings.json index.html
+          git commit -m "Update ratings ($(date -u +%F))"
+          git pull --rebase
+          git push

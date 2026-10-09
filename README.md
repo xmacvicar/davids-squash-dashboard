@@ -36,17 +36,16 @@ squash --undo
 
 ## Updating Rankings
 
-1. Log into [ClubLocker](https://www.clublocker.com) in your browser
-2. Run the `fetch_squash_ratings.py` script to download a fresh `squash_ratings.json`
-3. Replace `ratings.json` in your project folder with the new file
-4. Run in Terminal:
+**Automatic.** Every Thursday a GitHub Action (`.github/workflows/update-ratings.yml`)
+downloads your latest rankings from the US Squash / ClubLocker API, updates
+`ratings.json`, and rebuilds the site. No login needed — the rankings endpoint is public.
+
+To update right away: GitHub → **Actions** → **Update ratings** → **Run workflow**.
+Or from Terminal:
 
 ```
-python3 build.py --push
+python3 update_ratings.py --push
 ```
-
-This rebuilds `index.html` with the updated rankings and deploys it. (Simply committing
-and pushing `ratings.json` also works — the GitHub Action rebuilds the site.)
 
 ---
 
@@ -55,12 +54,14 @@ and pushing `ratings.json` also works — the GitHub Action rebuilds the site.)
 | File | Purpose |
 |---|---|
 | `matches.csv` | Your match history — the source of truth |
-| `ratings.json` | Your rankings data — replace periodically from ClubLocker |
+| `ratings.json` | Your rankings data — updated weekly by `update_ratings.py` |
 | `template.html` | The dashboard shell — never edit directly |
 | `index.html` | Generated automatically — never edit directly |
 | `build.py` | Rebuilds `index.html` from the source files |
 | `squash_add_match.py` | The CLI behind the `squash` command |
 | `.github/workflows/build.yml` | Rebuilds `index.html` on GitHub whenever data or the template changes |
+| `update_ratings.py` | Fetches rankings from ClubLocker into `ratings.json` |
+| `.github/workflows/update-ratings.yml` | Runs `update_ratings.py` weekly and rebuilds the site |
 
 ---
 
