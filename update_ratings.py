@@ -49,7 +49,8 @@ def transform(rows):
     out = {key: {} for key in SERIES}
     for row in rows:
         key = f'{row["RatingGroupDescr"]}|{row["DivisionName"]}'
-        if key in out and row.get("Ranking") is not None and row.get("Rating") is not None:
+        # Skip placeholder ratings (e.g. 1000 in early-2020 Squash Quebec periods)
+        if key in out and row.get("Ranking") is not None and 0 < (row.get("Rating") or 0) <= 10:
             d = row["RankingPeriod"][:10]
             out[key][d] = {"d": d, "r": row["Ranking"], "rt": row["Rating"]}
     return {key: [pts[d] for d in sorted(pts)] for key, pts in out.items()}
