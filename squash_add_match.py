@@ -16,12 +16,13 @@ Requirements:
 """
 
 import csv
-import json
 import re
 import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+
+from build import build
 
 MATCHES    = "matches.csv"
 TEMPLATE   = "template.html"
@@ -89,65 +90,6 @@ def append_to_csv(row):
 
 
 # ─────────────────────────────────────────────
-# Build
-# ─────────────────────────────────────────────
-
-def build():
-    with open(TEMPLATE, "r", encoding="utf-8") as f:
-        template = f.read()
-
-    # Build MD array and SCORES dict from CSV
-    md_rows = []
-    scores_dict = {}
-    date_counters = {}
-
-    with open(MATCHES, newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            d = row["Date"]
-            entry = (
-                f'  {{date:"{d}",opp:"{row["Opponent"]}",'
-                f'event:"{row["Event"]}",wl:"{row["Win/Loss"]}",'
-                f'result:"{row["Score"]}",type:"{row["Type"]}"'
-            )
-            if row.get("Game Scores", "").strip():
-                entry += f',games:"{row["Game Scores"]}"'
-            entry += "},"
-            md_rows.append(entry)
-
-            if row.get("Game Scores", "").strip():
-                count = date_counters.get(d, 0)
-                key = d if count == 0 else f"{d}{chr(97 + count)}"
-                if count == 1 and d in scores_dict:
-                    scores_dict[d + "a"] = scores_dict.pop(d)
-                scores_dict[key] = row["Game Scores"]
-                date_counters[d] = count + 1
-            else:
-                date_counters[d] = date_counters.get(d, 0) + 1
-
-    matches_js = "const MD=[\n" + "\n".join(md_rows) + "\n];"
-    scores_js  = "const SCORES=" + json.dumps(scores_dict, indent=2) + ";"
-
-    with open(RATINGS, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    ratings_js = f"const RANK_DATA={json.dumps(data, separators=(',', ':'))};"
-
-    output = template.replace("const MD=/*MATCHES_DATA*/[];", matches_js)
-    output = output.replace("const RANK_DATA=/*RATINGS_DATA*/{};", ratings_js)
-    output = output.replace("const SCORES=/*SCORES_DATA*/{};", scores_js)
-
-    for placeholder in ["/*MATCHES_DATA*/", "/*RATINGS_DATA*/", "/*SCORES_DATA*/"]:
-        if placeholder in output:
-            print(f"\nx  Build failed -- {placeholder} not replaced in template.html.\n")
-            sys.exit(1)
-
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        f.write(output)
-
-    count = len(re.findall(r'\{date:"', output))
-    print(f"  v {OUTPUT} rebuilt ({count} matches)")
-
-
-# ─────────────────────────────────────────────
 # Git
 # ─────────────────────────────────────────────
 
@@ -155,6 +97,7 @@ def git_commit_and_push(message):
     steps = [
         (["git", "add", MATCHES, OUTPUT], "Staging files"),
         (["git", "commit", "-m", message], "Committing"),
+        (["git", "pull", "--rebase"], "Pulling latest"),
         (["git", "push"], "Pushing to GitHub"),
     ]
     for cmd, label in steps:
@@ -173,6 +116,7 @@ def git_commit_and_push(message):
 
 def main():
     check_files()
+    subprocess.run(["git", "pull", "--rebase", "--autostash"], capture_output=True)
     today = date.today().isoformat()
 
     print("\n+-------------------------------------+")

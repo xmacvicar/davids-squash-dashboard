@@ -287,6 +287,7 @@ footer {
   .mtbl th:nth-child(3), .mtbl td:nth-child(3) { display: none; }
   .mtbl th:last-child, .mtbl td:last-child { display: none; }
   .rank-badge { display: none; }
+  .add-match-btn { margin-left: 8px; padding: 7px 10px; }
 }
 @media (max-width: 480px) {
   .header h1 { font-size: 26px; }
@@ -365,6 +366,69 @@ footer {
   .h2h-arena { grid-template-columns: 1fr; }
   .h2h-center { order: -1; }
 }
+/* ADD MATCH */
+.add-match-btn {
+  flex-shrink: 0; margin-left: auto; white-space: nowrap;
+  font-family: 'Red Hat Mono', monospace; font-size: var(--text-sm); font-weight: 600;
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--green); background: rgba(26,158,110,0.1); color: var(--green);
+  transition: all 0.15s;
+}
+.add-match-btn:hover { background: var(--green); color: #fff; }
+.add-match-btn[hidden] { display: none; }
+.am-del {
+  margin-left: 8px; padding: 0 6px; border-radius: 4px;
+  border: 1px solid transparent; background: none; cursor: pointer;
+  color: var(--muted); font-size: 16px; line-height: 1.2; vertical-align: middle;
+  opacity: 0.5; transition: all 0.15s;
+}
+.mtbl tr:hover .am-del { opacity: 1; }
+.am-del:hover { color: var(--red); border-color: var(--red); }
+.am-del:disabled { opacity: 0.3; cursor: default; }
+@media (hover: none) { .am-del { opacity: 1; } }
+.am-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 48px 16px; overflow-y: auto;
+}
+.am-overlay[hidden] { display: none; }
+.am-modal { width: 100%; max-width: 480px; }
+.am-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.am-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+.am-close:hover { color: var(--ink); }
+.am-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.am-field { display: flex; flex-direction: column; gap: 6px; }
+.am-field.full { grid-column: 1 / -1; }
+.am-field label {
+  font-family: 'Red Hat Mono', monospace; font-size: 10px;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+}
+.am-field input {
+  font-family: inherit; font-size: var(--text-base); color: var(--ink);
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+  padding: 10px 12px; width: 100%;
+}
+.am-field input:focus { outline: none; border-color: var(--blue); }
+.am-field .tab-group { margin-bottom: 0; }
+.am-field .tab-btn { flex: 1; }
+.am-hint { font-size: var(--text-sm); color: var(--muted); line-height: 1.5; }
+.am-hint a { color: var(--blue); }
+.am-msg { font-size: var(--text-sm); margin-top: 14px; min-height: 1em; }
+.am-msg.err { color: var(--red); }
+.am-msg.ok  { color: var(--green); }
+.am-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 18px; }
+.am-submit {
+  font-family: inherit; font-size: var(--text-base); font-weight: 700;
+  padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+  background: var(--green); color: #fff;
+}
+.am-submit:disabled { opacity: 0.5; cursor: default; }
+.am-link { background: none; border: none; color: var(--muted); font-size: var(--text-sm); cursor: pointer; text-decoration: underline; }
+@media (max-width: 480px) {
+  .am-grid { grid-template-columns: 1fr; }
+  .am-overlay { padding: 16px; }
+}
 </style>
 </head>
 <body>
@@ -401,6 +465,7 @@ footer {
       <button class="nav-tab" onclick="switchView('h2h',this)">Head to Head</button>
       <button class="nav-tab" onclick="switchView('rankings',this)">Rankings</button>
     </div>
+    <button class="add-match-btn" id="addMatchBtn" onclick="openAddMatch()" title="Add a match" hidden>+ Add match</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle light/dark mode">
       <svg id="themeIcon" viewBox="0 0 24 24"></svg>
     </button>
@@ -673,9 +738,81 @@ footer {
   </div>
 </footer>
 
+<!-- ═══ ADD MATCH ═══ -->
+<div class="am-overlay" id="amOverlay" hidden onclick="if(event.target===this)closeAddMatch()">
+  <div class="panel am-modal" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+    <div class="am-head">
+      <div class="panel-title" id="amTitle">Add Match</div>
+      <button class="am-close" onclick="closeAddMatch()" aria-label="Close">&times;</button>
+    </div>
+
+    <!-- Step 1: token (only shown until a token is saved on this device) -->
+    <form id="amTokenForm" hidden onsubmit="saveAmToken(event)">
+      <div class="am-field full">
+        <label for="amToken">GitHub token</label>
+        <input id="amToken" type="password" autocomplete="off" required placeholder="github_pat_…">
+      </div>
+      <p class="am-hint" style="margin-top:10px">
+        Paste a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>
+        with access to only this repo and <b>Contents: Read and write</b>. It's stored in this browser only.
+      </p>
+      <div class="am-msg" id="amTokenMsg"></div>
+      <div class="am-actions"><span></span><button class="am-submit" type="submit">Save token</button></div>
+    </form>
+
+    <!-- Step 2: match form -->
+    <form id="amForm" hidden onsubmit="submitAddMatch(event)">
+      <div class="am-grid">
+        <div class="am-field">
+          <label for="amDate">Date</label>
+          <input id="amDate" type="date" required>
+        </div>
+        <div class="am-field">
+          <label for="amScore">Score</label>
+          <input id="amScore" required placeholder="3-1" pattern="\d-\d" inputmode="numeric" title="Like 3-1 or 2-3">
+        </div>
+        <div class="am-field full">
+          <label for="amOpp">Opponent</label>
+          <input id="amOpp" required list="amOppList" autocomplete="off" placeholder="John Smith">
+          <datalist id="amOppList"></datalist>
+        </div>
+        <div class="am-field full">
+          <label for="amEvent">Event</label>
+          <input id="amEvent" required list="amEventList" autocomplete="off" placeholder="Montreal League Div 2">
+          <datalist id="amEventList"></datalist>
+        </div>
+        <div class="am-field">
+          <label>Result</label>
+          <div class="tab-group" id="amWL">
+            <button type="button" class="tab-btn active" data-v="Win">Win</button>
+            <button type="button" class="tab-btn" data-v="Loss">Loss</button>
+          </div>
+        </div>
+        <div class="am-field">
+          <label>Type</label>
+          <div class="tab-group" id="amType">
+            <button type="button" class="tab-btn active" data-v="league">League</button>
+            <button type="button" class="tab-btn" data-v="tournament">Tournament</button>
+          </div>
+        </div>
+        <div class="am-field full">
+          <label for="amGames">Game scores <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input id="amGames" placeholder="11-7, 9-11, 11-5, 11-8" pattern="\s*\d{1,2}-\d{1,2}(\s*,\s*\d{1,2}-\d{1,2})*\s*" title="Comma-separated, like 11-7, 9-11, 11-5">
+        </div>
+      </div>
+      <div class="am-msg" id="amMsg"></div>
+      <div class="am-actions">
+        <button type="button" class="am-link" onclick="forgetAmToken()">Forget token</button>
+        <button class="am-submit" type="submit" id="amSubmit">Add match</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const MD=[
+  {date:"2026-10-09",opp:"Test Person",event:"Montreal League Div 1",wl:"Win",result:"3-0",type:"league",games:"11-0, 11-0, 11-1"},
   {date:"2026-04-22",opp:"Patrick Hébert",event:"Montreal League Div 2",wl:"Loss",result:"1-3",type:"league",games:"6-11,9-11,11-8,6-11"},
   {date:"2026-04-08",opp:"Samer Shafik",event:"Montreal League Div 2",wl:"Win",result:"3-0",type:"league",games:"11-8, 11-8, 11-2"},
   {date:"2026-04-06",opp:"Sam Harper",event:"Montreal League Div 2",wl:"Win",result:"3-1",type:"league",games:"11-9,11-7,5-11,13-11"},
@@ -901,6 +1038,7 @@ document.getElementById('formPanel').innerHTML=`
 
 // ── SCORE DATA ───────────────────────────────────────────────
 const SCORES={
+  "2026-10-09": "11-0, 11-0, 11-1",
   "2026-04-22": "6-11,9-11,11-8,6-11",
   "2026-04-08": "11-8, 11-8, 11-2",
   "2026-04-06": "11-9,11-7,5-11,13-11",
@@ -1338,21 +1476,26 @@ document.getElementById('fiveGamePanel').innerHTML = `
 function fmtD(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});}
 function fmtDateShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}
 
+let matchFilter='all';
 function renderMatches(f){
-  let data=f==='all'?sorted:f==='Win'||f==='Loss'?sorted.filter(m=>m.wl===f):sorted.filter(m=>m.type===f);
+  matchFilter=f;
+  const admin=!!amGetToken();
+  let data=(f==='all'?sorted:f==='Win'||f==='Loss'?sorted.filter(m=>m.wl===f):sorted.filter(m=>m.type===f)).filter(m=>!m.deleted);
   document.getElementById('matchTbody').innerHTML=data.map(m=>`<tr>
     <td class="muted">${fmtD(m.date)}</td>
-    <td class="name">${m.opp}</td>
+    <td class="name">${m.opp}${admin?`<button class="am-del" data-i="${sorted.indexOf(m)}" title="Delete this match" aria-label="Delete match vs ${m.opp}">&times;</button>`:''}</td>
     <td class="muted" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.event}</td>
     <td style="text-align:right"><span class="res-pill ${m.wl.toLowerCase()}">${m.wl}</span></td>
     <td class="mono">${m.result}</td>
     <td class="muted" style="text-align:right">${m.games||'—'}</td>
     <td class="muted" style="text-align:right">${m.type}</td>
   </tr>`).join('');
-  document.getElementById('matchCount').textContent=`showing ${data.length} of ${total} matches`;
+  const deleted=sorted.filter(m=>m.deleted).length;
+  document.getElementById('matchCount').textContent=`showing ${data.length} of ${total-deleted} matches`
+    +(deleted?` · ${deleted} deleted, site rebuilding`:'');
 }
 function filterMatches(f,btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderMatches(f);
 }
@@ -1917,6 +2060,252 @@ function renderH2H() {
     });
   }
 }
+
+// ── ADD / DELETE MATCH ──────────────────────────────────────
+// Commits changes to matches.csv via the GitHub API; a GitHub Action
+// then rebuilds index.html. Writes need a token saved in this browser,
+// so the controls are harmless on the public site.
+const AM_REPO = 'xmacvicar/davids-squash-dashboard';
+const AM_FILE = 'matches.csv';
+const AM_TOKEN_KEY = 'dmGhToken';
+
+// Hoisted and called by renderMatches before the consts above exist, hence the literal key
+function amGetToken() {
+  try { return localStorage.getItem('dmGhToken'); } catch (e) { return null; }
+}
+
+(function initAddMatch() {
+  // Hidden from visitors: shown once a token is saved, or when the URL has ?admin
+  if (amGetToken() || /[?&#]admin\b/.test(location.search + location.hash)) {
+    document.getElementById('addMatchBtn').hidden = false;
+  }
+  const fill = (id, vals) => {
+    document.getElementById(id).innerHTML =
+      [...new Set(vals)].sort().map(v => `<option value="${v.replace(/"/g, '&quot;')}">`).join('');
+  };
+  fill('amOppList', MD.map(m => m.opp));
+  fill('amEventList', MD.map(m => m.event));
+  ['amWL', 'amType'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      btn.parentNode.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !document.getElementById('amOverlay').hidden) closeAddMatch();
+  });
+})();
+
+function openAddMatch() {
+  const hasToken = !!amGetToken();
+  document.getElementById('amTokenForm').hidden = hasToken;
+  document.getElementById('amForm').hidden = !hasToken;
+  if (!document.getElementById('amDate').value) {
+    const d = new Date();
+    document.getElementById('amDate').value =
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  document.getElementById('amOverlay').hidden = false;
+  document.getElementById(hasToken ? 'amOpp' : 'amToken').focus();
+}
+
+function closeAddMatch() {
+  document.getElementById('amOverlay').hidden = true;
+}
+
+function amSetMsg(id, text, kind) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'am-msg' + (kind ? ' ' + kind : '');
+}
+
+async function amApi(path, token, opts = {}) {
+  const res = await fetch(`https://api.github.com/repos/${AM_REPO}${path}`, {
+    ...opts,
+    cache: 'no-store',
+    headers: {
+      'Accept': 'application/vnd.github+json',
+      'Authorization': `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || `GitHub returned ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+async function saveAmToken(e) {
+  e.preventDefault();
+  const token = document.getElementById('amToken').value.trim();
+  amSetMsg('amTokenMsg', 'Checking token…');
+  try {
+    const repo = await amApi('', token);
+    if (!repo.permissions || !repo.permissions.push) throw new Error('This token can read the repo but not write to it.');
+    localStorage.setItem(AM_TOKEN_KEY, token);
+    document.getElementById('amToken').value = '';
+    document.getElementById('addMatchBtn').hidden = false;
+    amSetMsg('amTokenMsg', '');
+    renderMatches(matchFilter);
+    openAddMatch();
+  } catch (err) {
+    amSetMsg('amTokenMsg', err.status === 401 ? 'That token was rejected by GitHub.' : err.message, 'err');
+  }
+}
+
+function forgetAmToken() {
+  if (!confirm('Remove the saved GitHub token from this browser?')) return;
+  try { localStorage.removeItem(AM_TOKEN_KEY); } catch (e) {}
+  amSetMsg('amMsg', '');
+  renderMatches(matchFilter);
+  openAddMatch();
+}
+
+function amB64Decode(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function amB64Encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function amCsvField(v) {
+  return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+function amParseCsvLine(line) {
+  const out = [];
+  let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function amErrMsg(err) {
+  return err.status === 401 ? 'GitHub rejected the saved token (expired?). Open "+ Add match", click "Forget token" and add a new one.'
+       : err.status === 403 || err.status === 404 ? 'The saved token doesn\'t have write access to this repo.'
+       : `Couldn't save: ${err.message}`;
+}
+
+// Read matches.csv, let `edit` change its data lines (header excluded), and commit.
+// `edit` returns false to abort. Retries once if the file changed underneath us.
+async function amEditCsv(token, message, edit) {
+  for (let attempt = 0; ; attempt++) {
+    const file = await amApi(`/contents/${AM_FILE}`, token);
+    const csv = amB64Decode(file.content);
+    const nl = csv.includes('\r\n') ? '\r\n' : '\n';
+    const [header, ...lines] = csv.split(nl);
+    const trailing = lines.length && lines[lines.length - 1] === '' ? lines.pop() : null;
+    if (edit(lines) === false) return false;
+    const updated = [header, ...lines].join(nl) + (trailing === null ? '' : nl);
+    try {
+      await amApi(`/contents/${AM_FILE}`, token, {
+        method: 'PUT',
+        body: JSON.stringify({ message, content: amB64Encode(updated), sha: file.sha }),
+      });
+      return true;
+    } catch (err) {
+      if (err.status === 409 && attempt === 0) continue;
+      throw err;
+    }
+  }
+}
+
+async function submitAddMatch(e) {
+  e.preventDefault();
+  const token = amGetToken();
+  if (!token) return openAddMatch();
+
+  const val = id => document.getElementById(id).value.trim().replace(/\s+/g, ' ');
+  const active = id => document.querySelector(`#${id} .tab-btn.active`).dataset.v;
+  const row = {
+    date: val('amDate'),
+    opp: val('amOpp'),
+    event: val('amEvent'),
+    wl: active('amWL'),
+    score: val('amScore'),
+    games: val('amGames'),
+    type: active('amType'),
+  };
+
+  const [a, b] = row.score.split('-').map(Number);
+  if ((row.wl === 'Win') !== (a > b)) {
+    return amSetMsg('amMsg', `A ${row.wl.toLowerCase()} should be written as ${row.wl === 'Win' ? '3-1' : '1-3'} (your games first).`, 'err');
+  }
+  if (/["<>]/.test(row.opp + row.event)) {
+    return amSetMsg('amMsg', 'Names and events can\'t contain " < or > characters.', 'err');
+  }
+  if (MD.some(m => !m.deleted && m.date === row.date && m.opp.toLowerCase() === row.opp.toLowerCase())
+      && !confirm(`You already have a match vs ${row.opp} on ${row.date}. Add another?`)) {
+    return amSetMsg('amMsg', 'Cancelled.');
+  }
+
+  const btn = document.getElementById('amSubmit');
+  btn.disabled = true;
+  amSetMsg('amMsg', 'Saving…');
+
+  try {
+    const line = [row.date, row.opp, row.event, row.wl, row.score, row.games, row.type].map(amCsvField).join(',');
+    await amEditCsv(token, `Add match vs ${row.opp} (${row.date})`, lines => { lines.unshift(line); });
+    amSetMsg('amMsg', `Added ${row.wl.toLowerCase()} vs ${row.opp}. The site rebuilds in about a minute — refresh to see it.`, 'ok');
+    ['amOpp', 'amScore', 'amGames'].forEach(id => { document.getElementById(id).value = ''; });
+  } catch (err) {
+    amSetMsg('amMsg', amErrMsg(err), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteMatch(m, btn) {
+  const token = amGetToken();
+  if (!token) return;
+  if (!confirm(`Delete this match?\n\n${m.wl} vs ${m.opp} · ${m.result}\n${fmtD(m.date)} · ${m.event}`)) return;
+
+  btn.disabled = true;
+  const same = f => f[0] === m.date && f[1] === m.opp && f[2] === m.event && f[3] === m.wl
+    && f[4] === m.result && (f[5].trim() ? f[5] : '') === (m.games || '') && f[6] === m.type;
+  try {
+    const ok = await amEditCsv(token, `Delete match vs ${m.opp} (${m.date})`, lines => {
+      const i = lines.findIndex(l => same(amParseCsvLine(l)));
+      if (i === -1) return false;
+      lines.splice(i, 1);
+    });
+    if (!ok) {
+      btn.disabled = false;
+      return alert('That match wasn\'t found in matches.csv — it may already have been deleted or edited. Refresh the page.');
+    }
+    m.deleted = true;
+    renderMatches(matchFilter);
+  } catch (err) {
+    btn.disabled = false;
+    alert(amErrMsg(err));
+  }
+}
+
+document.getElementById('matchTbody').addEventListener('click', e => {
+  const btn = e.target.closest('.am-del');
+  if (btn) deleteMatch(sorted[+btn.dataset.i], btn);
+});
 </script>
 </body>
 </html>

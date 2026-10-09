@@ -34,6 +34,11 @@ def load_template():
         sys.exit(1)
 
 
+def js(s):
+    """Quote a CSV value as a JS string literal (escapes quotes, backslashes, </script>)."""
+    return json.dumps(s, ensure_ascii=False).replace("</", "<\\/")
+
+
 def build_matches_and_scores_js():
     """Build the MD array and SCORES dict from matches.csv."""
     try:
@@ -45,12 +50,12 @@ def build_matches_and_scores_js():
             for row in csv.DictReader(f):
                 d = row["Date"]
                 entry = (
-                    f'  {{date:"{d}",opp:"{row["Opponent"]}",'
-                    f'event:"{row["Event"]}",wl:"{row["Win/Loss"]}",'
-                    f'result:"{row["Score"]}",type:"{row["Type"]}"'
+                    f'  {{date:{js(d)},opp:{js(row["Opponent"])},'
+                    f'event:{js(row["Event"])},wl:{js(row["Win/Loss"])},'
+                    f'result:{js(row["Score"])},type:{js(row["Type"])}'
                 )
                 if row.get("Game Scores", "").strip():
-                    entry += f',games:"{row["Game Scores"]}"'
+                    entry += f',games:{js(row["Game Scores"])}'
                 entry += "},"
                 md_rows.append(entry)
 
@@ -108,8 +113,9 @@ def build():
 
 def git_commit_and_push(message):
     steps = [
-        (["git", "add", OUTPUT], "Staging"),
+        (["git", "add", OUTPUT, MATCHES, RATINGS], "Staging"),
         (["git", "commit", "-m", message], "Committing"),
+        (["git", "pull", "--rebase"], "Pulling latest"),
         (["git", "push"], "Pushing to GitHub"),
     ]
     for cmd, label in steps:

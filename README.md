@@ -2,18 +2,31 @@
 
 ## Adding a Match
 
-Run this in Terminal:
+### From the website (any device)
+
+Click **+ Add match** in the nav bar and fill in the form. It commits the match to
+`matches.csv`, and a GitHub Action rebuilds `index.html` — the live site updates in about a minute.
+
+The button is hidden from visitors. To unlock it on a new device, visit the site with
+`?admin` on the end of the URL, click **+ Add match**, and paste a GitHub token:
+
+1. Go to GitHub → Settings → Developer settings → [Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+2. Repository access: **Only select repositories** → `davids-squash-dashboard`
+3. Permissions: **Contents → Read and write**
+4. Pick an expiry, generate, and paste it into the form
+
+The token is saved only in that browser. If it expires, click **Forget token** and paste a new one.
+
+### From Terminal
 
 ```
 squash
 ```
 
-Follow the prompts. When you confirm, it will:
-- Append the match to `matches.csv`
-- Rebuild `index.html`
-- Commit and push to GitHub automatically
+Follow the prompts. It pulls the latest changes first (so matches added from the
+website aren't lost), then appends the match, rebuilds, commits, and pushes.
 
-To undo the last match:
+To undo the last match (from either method), `git pull` then:
 
 ```
 squash --undo
@@ -32,7 +45,8 @@ squash --undo
 python3 build.py --push
 ```
 
-This rebuilds `index.html` with the updated rankings and deploys it.
+This rebuilds `index.html` with the updated rankings and deploys it. (Simply committing
+and pushing `ratings.json` also works — the GitHub Action rebuilds the site.)
 
 ---
 
@@ -46,6 +60,7 @@ This rebuilds `index.html` with the updated rankings and deploys it.
 | `index.html` | Generated automatically — never edit directly |
 | `build.py` | Rebuilds `index.html` from the source files |
 | `squash_add_match.py` | The CLI behind the `squash` command |
+| `.github/workflows/build.yml` | Rebuilds `index.html` on GitHub whenever data or the template changes |
 
 ---
 
@@ -53,4 +68,5 @@ This rebuilds `index.html` with the updated rankings and deploys it.
 
 - **Never edit `index.html` directly** — your changes will be overwritten on the next build
 - **Never edit `template.html`** unless you're making a structural change to the dashboard itself
-- **If you manually edit `matches.csv`** (e.g. to fix a past entry), you must run `python3 build.py --push` afterwards — editing the CSV alone does nothing to the live site
+- **If you manually edit `matches.csv`** (e.g. to fix a past entry, even on github.com), just commit and push it — the GitHub Action rebuilds the site
+- **Run `git pull` before working locally** — the website and the Action both make commits
